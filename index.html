@@ -22,6 +22,11 @@
   .text h3 { font-size: 1.1em; }
   /* Wide math, code and tables scroll inside themselves instead of widening the page on phones. */
   pre, table, mjx-container[display="true"] { display: block; overflow-x: auto; }
+  /* A turning plate sits in a square, so its quarter turn stays inside the same space. */
+  .turn { display: block; width: min(320px, 100%); aspect-ratio: 1; cursor: pointer; }
+  .turn img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.9s ease-in-out; }
+  .turn[aria-pressed="true"] img { transform: rotate(-90deg); }
+  @media (prefers-reduced-motion: reduce) { .turn img { transition: none; } }
 </style>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -61,9 +66,15 @@
       breaks: true,
       renderer: {
         // An image with a title becomes a figure, with the title as its caption.
+        // A path ending in #turn makes a plate that gives a quarter turn when tapped.
         image(href, title, text) {
+          const turns = href.endsWith('#turn');
+          const src = (turns ? href.slice(0, -'#turn'.length) : href).replace(/"/g, '&quot;');
+          if (turns) {
+            return `<figure><span class="turn" role="button" tabindex="0" aria-pressed="false" aria-label="Turn the plate"><img src="${src}" alt="${text}"></span>${title ? `<figcaption>${title}</figcaption>` : ''}<p><small><i>(Tap the plate to turn it.)</i></small></p></figure>`;
+          }
           if (!title) return false;
-          return `<figure><img src="${href.replace(/"/g, '&quot;')}" alt="${text}" loading="lazy"><figcaption>${title}</figcaption></figure>`;
+          return `<figure><img src="${src}" alt="${text}" loading="lazy"><figcaption>${title}</figcaption></figure>`;
         },
       },
     });
@@ -150,6 +161,19 @@
     if (event.target.closest && event.target.closest('input, textarea, select, [contenteditable]')) return;
     const target = event.key === 'ArrowLeft' ? pieces[current - 1] : event.key === 'ArrowRight' ? pieces[current + 1] : null;
     if (target) location.hash = target.id;
+  });
+  // A tap, Enter or Space gives a plate its quarter turn; the next one turns it back.
+  const turn = (plate) => plate.setAttribute('aria-pressed', String(plate.getAttribute('aria-pressed') !== 'true'));
+  main.addEventListener('click', (event) => {
+    const plate = event.target.closest('.turn');
+    if (plate) turn(plate);
+  });
+  main.addEventListener('keydown', (event) => {
+    const plate = event.target.closest && event.target.closest('.turn');
+    if (plate && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      turn(plate);
+    }
   });
   window.addEventListener('hashchange', route);
   route();
