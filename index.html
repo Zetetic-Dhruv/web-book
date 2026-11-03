@@ -207,6 +207,8 @@
     }
   });
   window.addEventListener('hashchange', route);
+  // A preview build names the piece it opens on.
+  if (!location.hash && BOOK.start) history.replaceState(null, '', `#${BOOK.start}`);
   route();
 })();
 </script>
