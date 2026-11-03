@@ -27,6 +27,25 @@
   .turn img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.9s ease-in-out; }
   .turn[aria-pressed="true"] img { transform: rotate(-90deg); }
   @media (prefers-reduced-motion: reduce) { .turn img { transition: none; } }
+  .turning { text-align: center; }
+  .turning .turn { margin: 0 auto; }
+  /* A side panel sits right of a vertical rule drawn like the horizontal ones; on narrow screens it moves below. */
+  .cols { display: flex; }
+  .cols > .text:first-child { flex: 1; min-width: 0; }
+  .vrule { flex: none; width: 0; margin: 0 20px; border: 1px inset; color: gray; }
+  .panel { flex: none; width: 270px; }
+  .panel figure { margin: 0 0 1.4em; }
+  .panel img { display: block; max-width: 100%; height: auto; }
+  .panel figcaption { font-size: 0.8em; }
+  .panel p:empty { display: none; }
+  .cols .turning { position: sticky; top: 16px; }
+  @media (max-width: 760px) {
+    .cols { display: block; }
+    .vrule { width: auto; height: 0; margin: 1.5em 0; }
+    .panel { width: auto; }
+    .panel figure { display: inline-block; vertical-align: top; margin: 0 16px 1em 0; }
+    .cols .turning { position: static; }
+  }
 </style>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -71,7 +90,7 @@
           const turns = href.endsWith('#turn');
           const src = (turns ? href.slice(0, -'#turn'.length) : href).replace(/"/g, '&quot;');
           if (turns) {
-            return `<figure><span class="turn" role="button" tabindex="0" aria-pressed="false" aria-label="Turn the plate"><img src="${src}" alt="${text}"></span>${title ? `<figcaption>${title}</figcaption>` : ''}<p><small><i>(Tap the plate to turn it.)</i></small></p></figure>`;
+            return `<figure class="turning"><span class="turn" role="button" tabindex="0" aria-pressed="false" aria-label="Turn the plate"><img src="${src}" alt="${text}"></span>${title ? `<figcaption>${title}</figcaption>` : ''}<p><small><i>(Tap the plate to turn it.)</i></small></p></figure>`;
           }
           if (!title) return false;
           return `<figure><img src="${src}" alt="${text}" loading="lazy"><figcaption>${title}</figcaption></figure>`;
@@ -143,11 +162,27 @@
       <div class="piece">
         <h1>${piece.id} ${esc(piece.title)}</h1>
         ${piece.subtitle ? `<p><i>${esc(piece.subtitle)}</i></p>` : ''}
-        <div class="text">${unwritten(piece) ? '<p><i>Not written yet.</i></p>' : render(piece.text)}</div>
+        ${body(piece)}
       </div>
       <hr>
       <p>${nav(piece, prev, next)}</p>`;
+    // Panel images keep their relative sizes: each shows at the same fraction of its own pixel size.
+    main.querySelectorAll('.panel img').forEach((img) => {
+      const fit = () => { img.style.width = `${Math.round(img.naturalWidth * PANEL_SCALE)}px`; };
+      if (img.complete && img.naturalWidth) fit(); else img.addEventListener('load', fit, { once: true });
+    });
     window.typesetBook();
+  }
+
+  // Text between a line ":::panel" and a line ":::" goes in a side panel, right of a vertical rule.
+  const PANEL = /^:::panel[ \t]*\n([\s\S]*?)\n:::[ \t]*$/m;
+  const PANEL_SCALE = 0.28;
+  function body(piece) {
+    if (unwritten(piece)) return '<div class="text"><p><i>Not written yet.</i></p></div>';
+    const panel = piece.text.match(PANEL);
+    if (!panel) return `<div class="text">${render(piece.text)}</div>`;
+    const rest = (piece.text.slice(0, panel.index) + piece.text.slice(panel.index + panel[0].length)).trim();
+    return `<div class="cols"><div class="text">${render(rest)}</div><div class="vrule"></div><div class="text panel">${render(panel[1])}</div></div>`;
   }
 
   function route() {
