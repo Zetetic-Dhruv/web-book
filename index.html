@@ -34,8 +34,9 @@
   .cols > .text:first-child { flex: 1; min-width: 0; }
   .vrule { flex: none; width: 0; margin: 0 20px; border: 1px inset; color: gray; }
   .panel { flex: none; width: 270px; }
-  .panel figure { margin: 0 0 1.4em; }
-  .panel img { display: block; max-width: 100%; height: auto; }
+  /* Panel images all show at one size, each fitted whole into the same square. */
+  .panel img { display: block; width: 240px; height: 240px; object-fit: contain; }
+  .panel p, .panel figure { margin: 0 0 1em; }
   .panel figcaption { font-size: 0.8em; }
   .panel p:empty { display: none; }
   .cols .turning { position: sticky; top: 16px; }
@@ -43,7 +44,8 @@
     .cols { display: block; }
     .vrule { width: auto; height: 0; margin: 1.5em 0; }
     .panel { width: auto; }
-    .panel figure { display: inline-block; vertical-align: top; margin: 0 16px 1em 0; }
+    .panel p, .panel figure { display: inline-block; vertical-align: top; margin: 0 12px 12px 0; }
+    .panel img { width: 150px; height: 150px; }
     .cols .turning { position: static; }
   }
 </style>
@@ -166,17 +168,11 @@
       </div>
       <hr>
       <p>${nav(piece, prev, next)}</p>`;
-    // Panel images keep their relative sizes: each shows at the same fraction of its own pixel size.
-    main.querySelectorAll('.panel img').forEach((img) => {
-      const fit = () => { img.style.width = `${Math.round(img.naturalWidth * PANEL_SCALE)}px`; };
-      if (img.complete && img.naturalWidth) fit(); else img.addEventListener('load', fit, { once: true });
-    });
     window.typesetBook();
   }
 
   // Text between a line ":::panel" and a line ":::" goes in a side panel, right of a vertical rule.
   const PANEL = /^:::panel[ \t]*\n([\s\S]*?)\n:::[ \t]*$/m;
-  const PANEL_SCALE = 0.28;
   function body(piece) {
     if (unwritten(piece)) return '<div class="text"><p><i>Not written yet.</i></p></div>';
     const panel = piece.text.match(PANEL);
