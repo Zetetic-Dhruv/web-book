@@ -40,10 +40,11 @@
   .panel figcaption { font-size: 0.8em; }
   .panel p:empty { display: none; }
   .cols .turning { position: sticky; top: 16px; }
-  /* Responses: the form uses the page's font and never runs wider than the page. */
+  /* Responses: the form uses the page's font, and neither the form nor a long email or link runs wider than the page. */
   .responses h2 { font-size: 1.3em; }
   .responses input, .responses textarea, .responses button { font: inherit; }
   .responses input, .responses textarea { max-width: 100%; box-sizing: border-box; }
+  .responses dd { overflow-wrap: anywhere; }
   @media (max-width: 760px) {
     .cols { display: block; }
     .vrule { width: auto; height: 0; margin: 1.5em 0; }
@@ -202,17 +203,19 @@
           <p><label>Your email<br><input type="email" name="email" required maxlength="254" size="40" autocomplete="email"></label></p>
           <p><label>Your response<br><textarea name="text" required maxlength="5000" rows="8" cols="60"></textarea></label></p>
           <p hidden><label>Leave this empty <input name="website" tabindex="-1" autocomplete="off"></label></p>
-          <p><button type="submit">Send</button> <small><i>Your email goes only to the author and is never shown.</i></small></p>
+          <p><button type="submit">Send</button> <small><i>Your email is shown under your response.</i></small></p>
         </form>
         <p class="status" role="status"></p>
       </div>
       <hr>`;
   }
 
+  // Each response is signed "- email" on the line under it, unless the script leaves its email out.
   function showResponses(list) {
     const date = (time) => (time ? new Date(time).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
+    const tag = (email) => (email ? `<br>- ${esc(email)}` : '');
     main.querySelector('.responses .list').innerHTML = list.length
-      ? `<dl>${list.map((r) => `<dt><i>${date(r.time)}</i></dt><dd><p>${esc(r.text).replace(/\n/g, '<br>')}</p></dd>`).join('')}</dl>`
+      ? `<dl>${list.map((r) => `<dt><i>${date(r.time)}</i></dt><dd><p>${esc(r.text).replace(/\n/g, '<br>')}${tag(r.email)}</p></dd>`).join('')}</dl>`
       : '<p><i>No responses yet.</i></p>';
   }
 
